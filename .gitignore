@@ -28,3 +28,4 @@ dashboard/static/_probe*.html
 *.ico
 Thumbs.db
 desktop.ini
+.idea/
