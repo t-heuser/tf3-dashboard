@@ -1,9 +1,9 @@
-"""TF3 Dashboard launcher, shared by Windows and Linux: starts the collector (live.lua -> SQLite) and the web server,
-restarts them when they stop, opens the browser once the dashboard answers. Ctrl+C (or closing the terminal)
-stops everything.
+"""TF3 Dashboard launcher for Linux (run_dashboard.sh; Windows keeps its .cmd launchers): starts the collector
+(live.lua -> SQLite) and the web server, restarts them when they stop, opens the browser once the dashboard answers.
+Ctrl+C (or closing the terminal) stops everything.
 
   launch.py                      collector + server in this terminal, lines prefixed [collector] / [server]
-  launch.py --only collector     one of them, output as is (run_dashboard.cmd: one Windows Terminal pane each)
+  launch.py --only collector     one of them, output as is (run_dashboard_demo.sh: server only)
   launch.py --only server
   launch.py --install-desktop    Linux: add "TF3 Dashboard" to the application menu
 

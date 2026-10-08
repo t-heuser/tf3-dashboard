@@ -96,8 +96,8 @@ class Image:
 
 def _game_root(g: Path) -> Path | None:
     """The game folder (the one holding base/content/gui.zip) for a candidate install folder: the folder itself, or
-    its game/ subfolder (GOG Linux installers and Heroic's GOG Linux builds put the game there)."""
-    for c in (g, g / "game"):
+    outside Windows its game/ subfolder (GOG Linux installers and Heroic's GOG Linux builds put the game there)."""
+    for c in (g,) if sys.platform == "win32" else (g, g / "game"):
         try:
             if (c / "base" / "content" / "gui.zip").is_file():
                 return c
@@ -147,12 +147,14 @@ def _windows_candidates():
         pass
     for base in (os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")):
         if base:
-            yield from _usual_folders(Path(base))
+            base = Path(base)
+            yield from (base / "Epic Games" / "TransportFever3", base / "Epic Games" / "Transport Fever 3",
+                        base / "GOG Galaxy" / "Games" / "Transport Fever 3", base / "GOG Games" / "Transport Fever 3")
 
 
 def _usual_folders(base: Path):
     """<base>/{Epic Games, GOG Galaxy/Games, GOG Games}/<game folder name>: the launchers' default install folders
-    (base = Program Files, or a Wine prefix's drive_c/Program Files*)."""
+    inside a Wine prefix (base = drive_c/Program Files*)."""
     for store in ("Epic Games", "GOG Galaxy/Games", "GOG Games"):
         for name in tf3paths.GAME_FOLDER_NAMES:
             yield base / store / name

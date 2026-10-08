@@ -44,7 +44,7 @@ GAME_FOLDER_NAMES = ("Transport Fever 3", "TransportFever3")
 
 def version() -> str:
     """Companion version: the VERSION = "x.y.z" line of dashboard/server.py (single source, also read by
-    tools/build_release.py); the collector must not import the server to know it."""
+    build_release.cmd and tools/build_release.py); the collector must not import the server to know it."""
     try:
         with open(ROOT / "dashboard" / "server.py", encoding="utf-8") as f:
             for line in f:
@@ -358,17 +358,19 @@ def userdata_roots() -> list[tuple[str, Path]]:
 
 def candidate_export_dirs() -> list[Path]:
     """All dashboard_export folders that exist (or could exist) on this machine, most recent first: by live.lua,
-    then (no live.lua yet: mod not enabled, fresh install, several Wine prefixes) by the game's own log."""
+    then outside Windows (no live.lua yet: mod not enabled, fresh install, several Wine prefixes) by the game's own
+    log. Windows keeps the discovery order on a tie."""
     cands = [root / EXPORT_SUBDIR for _, root in userdata_roots()]
+    files = ("live.lua",) if sys.platform == "win32" else ("live.lua", "../crash_dump/stdout.txt")
 
-    def mtime(d: Path) -> tuple[float, float]:
+    def mtime(d: Path) -> tuple[float, ...]:
         out = []
-        for f in (d / "live.lua", d.parent / "crash_dump" / "stdout.txt"):
+        for f in files:
             try:
-                out.append(f.stat().st_mtime)
+                out.append((d / f).stat().st_mtime)
             except OSError:
                 out.append(-1.0)
-        return out[0], out[1]
+        return tuple(out)
 
     uniq: dict[str, Path] = {}
     for c in cands:
@@ -621,6 +623,15 @@ def example_export_dir() -> str:
 
 
 def not_found_hint() -> str:
+    if sys.platform == "win32":
+        appdata = os.environ.get("APPDATA", r"C:\Users\<you>\AppData\Roaming").replace("\\", "\\\\")
+        return (
+            "Could not find the Transport Fever 3 userdata folder (neither Steam nor Epic/GOG).\n"
+            "  - Start the game once with the 'Second Screen Dashboard' mod enabled in your savegame, or\n"
+            f"  - create {CONFIG.name} next to run_dashboard.cmd with the folder of your installation:\n"
+            '      Steam:    { "export_dir": "C:\\\\Program Files (x86)\\\\Steam\\\\userdata\\\\<id>\\\\3493540\\\\local\\\\dashboard_export" }\n'
+            f'      Epic/GOG: {{ "export_dir": "{appdata}\\\\Transport Fever 3\\\\dashboard_export" }}'
+        )
     example = json.dumps({"export_dir": example_export_dir()})
     return (
         "Could not find the Transport Fever 3 userdata folder. Looked in:\n"
