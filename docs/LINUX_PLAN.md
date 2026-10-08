@@ -175,7 +175,7 @@ Watching for the game process (psutil-free process polling differs per OS and is
   - `TF3-Dashboard-<v>-windows.zip`: as today (embedded Python, CRLF forced on `.cmd`);
   - `TF3-Dashboard-<v>-linux.tar.gz`: no Python, LF, `+x` on `.sh` (tar keeps the exec bit, zip often loses it);
   - `tf3_dashboard_export-rev<N>.zip`: unchanged.
-- `build_release.cmd` becomes a shim calling it. `.gitattributes`: `*.sh text eol=lf`.
+- `build_release.cmd` is removed (single build entry point). `.gitattributes`: `*.sh text eol=lf`.
 - README: install section split Windows / Linux; DETAILS.md: launcher and detection sections updated.
 
 ## Phase 7 — deferred: AUR package
