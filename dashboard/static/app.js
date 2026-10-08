@@ -392,41 +392,45 @@
     const steps = [];
     const step = (ok, label, detail) => steps.push(`<li class="${ok === null ? "" : ok ? "ok" : "bad"}"><span class="mark">${ok === null ? "·" : ok ? "✓" : "✗"}</span><div><div class="n">${label}</div>${detail ? `<div class="d">${detail}</div>` : ""}</div></li>`);
     const mono = s => `<code>${esc(s)}</code>`;
+    // platform-specific words (launcher name, path separator, ...) come from the server: same text on Windows and Linux
+    const sep = d.sep || "\\";
+    const P = { cfg: mono("config.json"), launcher: mono(d.launcher || "run_dashboard.cmd"), sub: mono(sep + "dashboard_export"),
+      stdout: mono(`crash_dump${sep}stdout.txt`), move_to: mono(d.move_to || "C:\\TF3-Dashboard"), places: (d.searched || []).map(mono).join(", ") };
     // 1. the game's userdata folder
     if (!d.export_dir) {
-      step(false, t("setup_no_folder"), t("setup_no_folder_help", { cfg: mono("config.json"), ex: mono(`{ "export_dir": "%APPDATA%\\Transport Fever 3\\dashboard_export" }`) }));
+      step(false, t("setup_no_folder"), t("setup_no_folder_help", { ...P, ex: mono(JSON.stringify({ export_dir: d.example_export_dir || "" })) }));
     } else {
       const others = (d.candidates || []).filter(c => c.dir.toLowerCase() !== d.export_dir.toLowerCase());
       const where = mono(d.export_dir) + (others.length ? `<br>${t("setup_other_folders")} ${others.map(c => `${esc(c.store)}: ${mono(c.dir)}`).join(", ")}` : "");
       // the game does not always create dashboard_export itself (saveUserdata then fails); the companion creates it
       // at startup, so a missing folder here means it could not
       const storeLabel = esc(d.store || (d.source === "config" ? "config.json" : d.source === "auto" ? "?" : t("setup_source_configured")));
-      if (!d.dir_exists) step(false, t("setup_folder_missing", { store: storeLabel }), where + "<br>" + t("setup_folder_missing_help"));
+      if (!d.dir_exists) step(false, t("setup_folder_missing", { store: storeLabel }), where + "<br>" + t("setup_folder_missing_help", P));
       else step(true, t("setup_folder", { store: storeLabel }), where);
       // 1b. what the game's own log (crash_dump/stdout.txt) says, when it contradicts the above: another userdata
       // folder (other Steam account, moved profile), mod not in the list, mod never ran, writes refused
       const g = d.game_log;
       if (g && !d.live_exists) {
         const logRef = mono(g.log);
-        if (g.userdata_matches === false) step(false, t("setup_log_other_folder"), t("setup_log_other_folder_help", { dir: mono(g.userdata), cfg: mono("config.json"), log: logRef }));
+        if (g.userdata_matches === false) step(false, t("setup_log_other_folder"), t("setup_log_other_folder_help", { ...P, dir: mono(g.userdata), log: logRef }));
         else if (!g.mod_loaded) step(false, t("setup_log_no_mod"), t("setup_log_no_mod_help", { log: logRef }));
         else if (g.save_errors > 0) step(false, t("setup_log_write_error", { n: g.save_errors }), mono(g.last_error) + "<br>" + t("setup_log_write_error_help", { log: logRef }));
         else if (g.mod_lines === 0) step(false, t("setup_log_mod_idle"), t("setup_log_mod_idle_help", { log: logRef }));
         else step(null, t("setup_log_ok", { n: g.written, src: esc(g.mod_source || "?") }), logRef);
       }
       // 2. live.lua written by the mod
-      if (!d.live_exists) step(false, t("setup_no_live"), t("setup_no_live_help") + " " + t("setup_no_live_log"));
+      if (!d.live_exists) step(false, t("setup_no_live"), t("setup_no_live_help") + " " + t("setup_no_live_log", P));
       else if (d.live_age_s > 120) step(false, t("setup_live_old", { ago: fmtDur(d.live_age_s) }), t("setup_live_old_help"));
       else step(true, t("setup_live_ok", { ago: fmtDur(d.live_age_s) }), null);
     }
     // 3. collector -> database
     if (d.export_dir && d.live_exists) {
-      if (!d.db_exists || !d.snapshots) step(false, t("setup_no_db"), t("setup_no_db_help", { db: mono(d.db) }));
+      if (!d.db_exists || !d.snapshots) step(false, t("setup_no_db"), t("setup_no_db_help", { ...P, db: mono(d.db) }));
       else step(d.last_snapshot_age_s < 120, t("setup_db", { n: d.snapshots, ago: fmtDur(d.last_snapshot_age_s) }), null);
     }
     // the companion itself running from OneDrive/Dropbox: not a step of the chain, but a classic cause of an empty or
     // corrupt SQLite database, so say it here
-    const sync = (d.synced_dirs || []).length ? `<p class="setup-warn">${t("setup_sync_warning", { dir: mono(d.synced_dirs[0]) })}</p>` : "";
+    const sync = (d.synced_dirs || []).length ? `<p class="setup-warn">${t("setup_sync_warning", { ...P, dir: mono(d.synced_dirs[0]) })}</p>` : "";
     $("#setup-body").innerHTML = sync + `<ol class="steps">${steps.join("")}</ol><p class="muted small">${t("setup_footer", { v: esc(d.version || "") })}</p>`;
   }
   function fmtDur(s) { if (s == null) return "–"; if (s < 90) return t("dur_s", { n: Math.round(s) }); if (s < 5400) return t("dur_m", { n: Math.round(s / 60) }); return t("dur_h", { n: Math.round(s / 360) / 10 }); }
